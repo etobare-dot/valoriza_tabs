@@ -1,0 +1,19 @@
+codigo,descripcion,unidad,precio_clp
+MT035,Instalacion de faenas,gl,1999300
+MT003,Hormigon estructural G25,m3,189220
+MT001,Emplantillado hormigon G05,m3,181136
+MT011,Enfierradura (acero de refuerzo),kg,3959
+MT018,Moldaje,m2,19616
+MT026,Base granular,m3,25000
+MT024,Relleno material granular compactado,m3,32008
+MT027,Escarpe y destronque de la faja,m3,1197
+MT021,Excavacion con maquina,m3,4344
+MT033,Manejo y transporte a botadero,m3,3600
+MT020,Juntas de dilatacion,m,8500
+MT040,Aplicacion de Antisol (curado quimico),m2,358
+MT036,Demolicion de hormigon existente,m3,45000
+MT037,Shotcrete proyectado,m2,35000
+MT038,Malla ACMA C-139,m2,7500
+MT039,Reja metalica (pletinas y refuerzos),kg,4500
+MT041,Cajon prefabricado de hormigon,ml,350000
+MT042,Compuerta metalica con mecanismo de izaje,un,2500000

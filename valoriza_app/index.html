@@ -1,0 +1,739 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Valorización de Obras de Riego - CNR</title>
+
+<!-- Vue 3 servido localmente: sin Node.js, sin build, sin internet -->
+<script src="/vue.global.js"></script>
+
+<style>
+    * { box-sizing: border-box; }
+    body {
+        font-family: Arial, Helvetica, sans-serif;
+        margin: 0;
+        background-color: #f4f6f8;
+        color: #222;
+    }
+    .barra-color {
+        width: 100%;
+        height: 0.5rem;
+        /* Placeholder: reemplazar por el color/gradiente definitivo cuando
+           se defina (institucional, marca, etc.). */
+        background: #d94f30;
+    }
+    header {
+        background: white;
+        padding: 0.6rem 1rem;
+        border-bottom: 5px solid #0b4f6c;
+    }
+    .header-logos {
+        display: grid;
+        grid-template-columns: auto 1fr auto;
+        grid-template-areas: "logo1 titulo logo2";
+        align-items: center;
+        gap: 0.8rem;
+    }
+    .header-logos img { height: 80px; width: auto; display: block; }
+    .header-logos img:first-of-type { grid-area: logo1; justify-self: start; }
+    .header-logos img:last-of-type { grid-area: logo2; justify-self: end; }
+    .header-titulo { grid-area: titulo; justify-self: center; }
+    header h1 {
+        margin: 0;
+        color: #0b4f6c;
+        padding: 0.7rem 1.4rem;
+        font-size: 1.1rem;
+        text-align: center;
+        text-transform: uppercase;
+        letter-spacing: 0.03em;
+    }
+    @media (max-width: 700px) {
+        .header-logos {
+            grid-template-columns: 1fr 1fr;
+            grid-template-areas:
+                "logo1 logo2"
+                "titulo titulo";
+        }
+        .header-titulo { margin-top: 0.6rem; }
+    }
+    main {
+        display: flex;
+        gap: 1rem;
+        padding: 1rem;
+        align-items: flex-start;
+        flex-wrap: wrap;
+    }
+    .panel {
+        background: white;
+        border-radius: 6px;
+        box-shadow: 0 1px 3px rgba(0,0,0,0.15);
+        padding: 0.8rem;
+    }
+    .panel h2 {
+        margin: 0 0 1rem;
+        font-size: 1.05rem;
+        color: #0b4f6c;
+        border-bottom: 2px solid #0b4f6c;
+        padding-bottom: 0rem;
+    }
+    #panel-presupuesto { flex: 1 1 100%; }
+    .col-resultados { min-width: 480px; }
+    #panel-tipologia { width: 100%; }
+    #panel-datos { flex: 1 1 100%; display: flex; align-items: stretch; gap: 1.5rem; }
+    .fila-tipologia {
+        display: flex;
+        flex-wrap: wrap;
+        justify-content: center;
+        align-items: center;
+        gap: 0.6rem 1rem;
+        margin: 0;
+    }
+    .fila-tipologia span {
+        font-size: 1.05rem;
+        color: #0b4f6c;
+        font-weight: bold;
+        text-transform: uppercase;
+        letter-spacing: 0.02em;
+        white-space: nowrap;
+    }
+    .fila-tipologia select {
+        margin-top: 0;
+        width: 480px;
+        max-width: 60%;
+        font-size: 1rem;
+        padding: 0.6rem;
+    }
+    .col-izquierda { width: 260px; flex-shrink: 0; position: relative; }
+
+    .etiqueta-campo {
+        display: flex;
+        width: 100%;
+        align-items: center;
+        justify-content: space-between;
+        gap: 0.4rem;
+    }
+    .ayuda-icono {
+        position: relative;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        width: 17px;
+        height: 17px;
+        border-radius: 50%;
+        background: #0b4f6c;
+        color: white;
+        font-size: 0.7rem;
+        font-weight: bold;
+        line-height: 1;
+        cursor: help;
+        flex-shrink: 0;
+    }
+    .ayuda-icono:hover, .ayuda-icono:focus { background: #d9a441; }
+    .ayuda-tooltip {
+        display: none;
+        position: absolute;
+        left: calc(100% + 14px);
+        top: 50%;
+        transform: translateY(-50%);
+        width: 260px;
+        background: #16262d;
+        color: #eef3f5;
+        border: 1px solid #d9a441;
+        border-radius: 6px;
+        box-shadow: 0 6px 18px rgba(0,0,0,0.35);
+        padding: 0.7rem 0.85rem;
+        font-size: 0.82rem;
+        font-weight: normal;
+        text-transform: none;
+        letter-spacing: normal;
+        text-align: left;
+        line-height: 1.4;
+        z-index: 50;
+    }
+    .ayuda-tooltip strong {
+        display: block;
+        color: #d9a441;
+        font-size: 0.85rem;
+        margin-bottom: 0.35rem;
+        text-transform: uppercase;
+        letter-spacing: 0.02em;
+    }
+    .ayuda-tooltip::after {
+        content: "";
+        position: absolute;
+        right: 100%;
+        top: 50%;
+        transform: translateY(-50%);
+        border: 7px solid transparent;
+        border-right-color: #d9a441;
+    }
+    .ayuda-tooltip::before {
+        content: "";
+        position: absolute;
+        right: calc(100% - 1px);
+        top: 50%;
+        transform: translateY(-50%);
+        border: 6px solid transparent;
+        border-right-color: #16262d;
+        z-index: 1;
+    }
+    .ayuda-icono:hover .ayuda-tooltip,
+    .ayuda-icono:focus .ayuda-tooltip { display: block; }
+    .separador-vertical { width: 1px; background: #d5dde0; align-self: stretch; }
+    .col-figuras {
+        flex: 1;
+        min-width: 280px;
+        color: #888;
+        font-style: italic;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        text-align: center;
+        padding: 1rem;
+    }
+    .figura-esquema {
+        max-width: 100%;
+        width: 500px; /* tamaño "ideal": se achica en pantallas chicas, no crece más que esto */
+        height: auto;
+        display: block;
+        margin: 0 auto;
+    }
+
+    label { display: block; font-size: 0.85rem; margin-top: 0.7rem; color: #444; }
+    select, input[type=number] {
+        width: 100%;
+        padding: 0.45rem;
+        margin-top: 0.25rem;
+        border: 1px solid #bbb;
+        border-radius: 4px;
+        font-size: 0.95rem;
+    }
+    .porcentajes { display: flex; flex-direction: column; }
+    button {
+        width: 100%;
+        margin-top: 1.2rem;
+        padding: 0.7rem;
+        background: #0b4f6c;
+        color: white;
+        border: none;
+        border-radius: 4px;
+        font-size: 1rem;
+        cursor: pointer;
+    }
+    button:hover { background: #0d6087; }
+    button:disabled { background: #9ab6c2; cursor: wait; }
+
+    table { border-collapse: collapse; width: 100%; font-size: 0.87rem; }
+    th, td { border: 1px solid #ddd; padding: 6px 8px; text-align: right; }
+    th { background-color: #0b4f6c; color: white; }
+    td.izq, th.izq { text-align: left; }
+    tr:nth-child(even) { background-color: #f9f9f9; }
+
+    nav.tabs {
+        display: flex;
+        justify-content: center;
+        padding: 0rem 2rem 0;
+        background: #f4f6f8;
+	border-bottom: 5px solid #0b4f6c;
+    }
+    nav.tabs button {
+        flex: 1 1 220px;
+        max-width: 220px;
+        margin-top: 0;
+        padding: 0.7rem 0.8rem;
+        background: #85a7b6; /* #0b4f6c + 50% blanco */
+        color: white;
+        border: none;
+        border-right: 1px solid rgba(0,0,0,0.12);
+        border-radius: 0;
+        font-size: 0.92rem;
+        text-align: center;
+        text-transform: uppercase;
+        letter-spacing: 0.02em;
+        cursor: pointer;
+    }
+    nav.tabs button:first-child { border-left: 1px solid rgba(0,0,0,0.12); }
+    nav.tabs button:hover:not(.activa):not(:disabled) { background: #6f97a8; }
+    nav.tabs button.activa {
+        background: #0b4f6c;
+        font-weight: bold;
+    }
+    nav.tabs button:disabled {
+        background: #cfd8dc;
+        color: #8a969b;
+        cursor: not-allowed;
+    }
+    .aviso-vacio {
+        padding: 2rem;
+        text-align: center;
+        color: #777;
+        font-style: italic;
+    }
+    .placeholder-export {
+        background: #eef6fa;
+        border-left: 4px solid #0b4f6c;
+        padding: 1rem 1.2rem;
+        font-size: 0.9rem;
+        max-width: 500px;
+    }
+
+    .resumen { margin-top: 1rem; }
+    .resumen td.total, .resumen th.total { background: #e8f5e9; font-weight: bold; }
+    .info-calculada {
+        margin-top: 0.8rem;
+        background: #eef6fa;
+        border-left: 4px solid #0b4f6c;
+        padding: 0.6rem 0.9rem;
+        font-size: 0.85rem;
+    }
+    .mensaje-error {
+        color: #b00020;
+        font-weight: bold;
+        margin-top: 1rem;
+    }
+    .vacio { color: #777; font-style: italic; }
+</style>
+</head>
+<body>
+
+<div id="app">
+    <div class="barra-color"></div>
+    <header>
+        <div class="header-logos">
+            <img src="/images/logo1.png" alt="Logo 1">
+            <div class="header-titulo">
+                <h1>Cubicación y Valorización Referencial de Obras en Canales de Riego</h1>
+            </div>
+            <img src="/images/logo2.png" alt="Logo 2">
+        </div>
+    </header>
+
+    <nav class="tabs">
+        <button :class="{activa: pestanaActiva === 'datos'}" @click="pestanaActiva = 'datos'">
+            Datos de la Obra
+        </button>
+        <button :class="{activa: pestanaActiva === 'presupuesto'}"
+                :disabled="!resultado" @click="pestanaActiva = 'presupuesto'">
+            Presupuesto
+        </button>
+        <button :class="{activa: pestanaActiva === 'exportar'}"
+                :disabled="!resultado" @click="pestanaActiva = 'exportar'">
+            Exportar Resultado
+        </button>
+    </nav>
+
+    <main v-if="pestanaActiva === 'datos'">
+        <!-- Panel de ancho completo: selección de tipología -->
+        <div class="panel" id="panel-tipologia">
+            <label class="fila-tipologia">
+                <span>Seleccionar tipología de obra</span>
+                <select v-model="tipologiaId" @change="alCambiarTipologia">
+                    <option disabled value="">Seleccione una tipología...</option>
+                    <option v-for="t in tipologias" :key="t.id" :value="t.id">{{ t.titulo }}</option>
+                </select>
+            </label>
+        </div>
+
+        <div class="panel" id="panel-datos">
+            <!-- Columna izquierda: parámetros de entrada -->
+            <div class="col-izquierda">
+                <h2>Datos de la obra</h2>
+
+                <p v-if="!tipologiaActual" class="vacio">
+                    Por favor selecciona la tipología de obra a valorizar.
+                </p>
+
+                <template v-if="tipologiaActual">
+                    <label v-for="campo in tipologiaActual.campos" :key="campo.nombre">
+                        <span class="etiqueta-campo">
+                            {{ campo.etiqueta }} ({{ campo.unidad }})
+                            <span class="ayuda-icono" tabindex="0">
+                                ?
+                                <span class="ayuda-tooltip">
+                                    <strong>{{ campo.etiqueta }}</strong>
+                                    {{ ayudaCampo(campo.nombre) }}
+                                </span>
+                            </span>
+                        </span>
+                        <input type="number" step="0.01" v-model.number="parametros[campo.nombre]">
+                    </label>
+
+                    <button :disabled="calculando" @click="valorizar">
+                        {{ calculando ? 'Calculando...' : 'Cubicar y valorizar' }}
+                    </button>
+                </template>
+
+                <p v-if="error" class="mensaje-error">{{ error }}</p>
+            </div>
+
+            <div class="separador-vertical"></div>
+
+            <!-- Columna derecha: figuras esquemáticas y textos explicativos -->
+            <div class="col-figuras">
+                <img v-if="tipologiaId === 'reja_sifon' || tipologiaId === 'reparacion_sifon'"
+                     class="figura-esquema" src="/images/esquema-sifon.png" alt="Esquema del sifón">
+                <span v-else>
+                    Aquí irán las figuras esquemáticas y textos explicativos de
+                    cada parámetro.
+                </span>
+            </div>
+        </div>
+    </main>
+
+    <main v-if="pestanaActiva === 'presupuesto'">
+        <div class="panel" id="panel-presupuesto" style="display:flex; align-items:stretch; gap:1.5rem;">
+
+            <!-- Columna izquierda: parámetros del presupuesto -->
+            <div class="col-izquierda">
+                <h2>Parámetros del presupuesto</h2>
+
+                <label>
+                    <span class="etiqueta-campo">
+                        Vector de precios base
+                        <span class="ayuda-icono" tabindex="0">
+                            ?
+                            <span class="ayuda-tooltip">
+                                <strong>Vector de precios base</strong>
+                                {{ ayudaPresupuesto('vector_precio') }}
+                            </span>
+                        </span>
+                    </span>
+                    <select v-model="vectorPrecio">
+                        <option v-for="v in vectoresPrecio" :key="v.id" :value="v.id">{{ v.etiqueta }}</option>
+                    </select>
+                </label>
+
+                <div class="porcentajes">
+                    <label>
+                        <span class="etiqueta-campo">
+                            Gastos generales (%)
+                            <span class="ayuda-icono" tabindex="0">
+                                ?
+                                <span class="ayuda-tooltip">
+                                    <strong>Gastos generales</strong>
+                                    {{ ayudaPresupuesto('gastos_generales') }}
+                                </span>
+                            </span>
+                        </span>
+                        <input type="number" step="0.5" v-model.number="porcentajes.gastos_generales">
+                    </label>
+                    <label>
+                        <span class="etiqueta-campo">
+                            Utilidades (%)
+                            <span class="ayuda-icono" tabindex="0">
+                                ?
+                                <span class="ayuda-tooltip">
+                                    <strong>Utilidades</strong>
+                                    {{ ayudaPresupuesto('utilidades') }}
+                                </span>
+                            </span>
+                        </span>
+                        <input type="number" step="0.5" v-model.number="porcentajes.utilidades">
+                    </label>
+                    <label>
+                        <span class="etiqueta-campo">
+                            Imprevistos (%)
+                            <span class="ayuda-icono" tabindex="0">
+                                ?
+                                <span class="ayuda-tooltip">
+                                    <strong>Imprevistos</strong>
+                                    {{ ayudaPresupuesto('imprevistos') }}
+                                </span>
+                            </span>
+                        </span>
+                        <input type="number" step="0.5" v-model.number="porcentajes.imprevistos">
+                    </label>
+                    <label>
+                        <span class="etiqueta-campo">
+                            IVA (%)
+                            <span class="ayuda-icono" tabindex="0">
+                                ?
+                                <span class="ayuda-tooltip">
+                                    <strong>IVA</strong>
+                                    {{ ayudaPresupuesto('iva') }}
+                                </span>
+                            </span>
+                        </span>
+                        <input type="number" step="1" v-model.number="porcentajes.iva">
+                    </label>
+                </div>
+
+                <hr style="margin: 1.2rem 0; border: none; border-top: 1px solid #d5dde0;">
+
+                <label>
+                    <span class="etiqueta-campo">
+                        Valor UF ($)
+                        <span class="ayuda-icono" tabindex="0">
+                            ?
+                            <span class="ayuda-tooltip">
+                                <strong>Valor UF</strong>
+                                {{ ayudaPresupuesto('valor_uf') }}
+                            </span>
+                        </span>
+                    </span>
+                    <input type="number" step="0.01" v-model.number="ufIngresada">
+                </label>
+
+                <button :disabled="calculando" @click="recalcularPresupuesto">
+                    {{ calculando ? 'Calculando...' : 'Recalcular presupuesto' }}
+                </button>
+
+                <p v-if="error" class="mensaje-error">{{ error }}</p>
+            </div>
+
+            <div class="separador-vertical"></div>
+
+            <!-- Columna central: presupuesto calculado -->
+            <div class="col-resultados" style="flex: 1;">
+                <h2>Presupuesto</h2>
+
+                <p v-if="!resultado" class="vacio">
+                    Seleccione una tipología, ingrese las dimensiones y presione
+                    "Cubicar y valorizar" en la pestaña "Datos de la Obra".
+                </p>
+
+                <template v-if="resultado">
+                    <p><strong>{{ resultado.tipologia }}</strong></p>
+
+                    <table style="margin-top:0.8rem">
+                        <thead>
+                            <tr>
+                                <th class="izq">Código</th>
+                                <th class="izq">Partida</th>
+                                <th>Un.</th>
+                                <th>Cantidad</th>
+                                <th>P.U. ($)</th>
+                                <th>Subtotal ($)</th>
+                                <th>Subtotal (UF)</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr v-for="p in resultado.partidas" :key="p.codigo">
+                                <td class="izq">{{ p.codigo }}</td>
+                                <td class="izq">{{ p.descripcion }}</td>
+                                <td>{{ p.unidad }}</td>
+                                <td>{{ formato(p.cantidad, 2) }}</td>
+                                <td>{{ formato(p.precio_clp) }}</td>
+                                <td>{{ formato(p.subtotal_clp) }}</td>
+                                <td>{{ formato(ufDe(p.subtotal_clp), 2) }}</td>
+                            </tr>
+                        </tbody>
+                    </table>
+
+                    <table class="resumen">
+                        <thead>
+                            <tr><th class="izq">Resumen</th><th>$</th><th>UF</th></tr>
+                        </thead>
+                        <tbody>
+                            <tr>
+                                <td class="izq">Costo directo</td>
+                                <td>{{ formato(resultado.resumen.costo_directo.clp) }}</td>
+                                <td>{{ formato(ufDe(resultado.resumen.costo_directo.clp), 2) }}</td>
+                            </tr>
+                            <tr>
+                                <td class="izq">Gastos generales ({{ resultado.porcentajes.gastos_generales }}%)</td>
+                                <td>{{ formato(resultado.resumen.gastos_generales.clp) }}</td>
+                                <td>{{ formato(ufDe(resultado.resumen.gastos_generales.clp), 2) }}</td>
+                            </tr>
+                            <tr>
+                                <td class="izq">Utilidades ({{ resultado.porcentajes.utilidades }}%)</td>
+                                <td>{{ formato(resultado.resumen.utilidades.clp) }}</td>
+                                <td>{{ formato(ufDe(resultado.resumen.utilidades.clp), 2) }}</td>
+                            </tr>
+                            <tr>
+                                <td class="izq">Imprevistos ({{ resultado.porcentajes.imprevistos }}%)</td>
+                                <td>{{ formato(resultado.resumen.imprevistos.clp) }}</td>
+                                <td>{{ formato(ufDe(resultado.resumen.imprevistos.clp), 2) }}</td>
+                            </tr>
+                            <tr>
+                                <td class="izq">Costo total neto</td>
+                                <td>{{ formato(resultado.resumen.neto.clp) }}</td>
+                                <td>{{ formato(ufDe(resultado.resumen.neto.clp), 2) }}</td>
+                            </tr>
+                            <tr>
+                                <td class="izq">IVA ({{ resultado.porcentajes.iva }}%)</td>
+                                <td>{{ formato(resultado.resumen.iva.clp) }}</td>
+                                <td>{{ formato(ufDe(resultado.resumen.iva.clp), 2) }}</td>
+                            </tr>
+                            <tr>
+                                <td class="izq total">TOTAL CON IVA</td>
+                                <td class="total">{{ formato(resultado.resumen.total.clp) }}</td>
+                                <td class="total">{{ formato(ufDe(resultado.resumen.total.clp), 2) }}</td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </template>
+            </div>
+
+            <div class="separador-vertical"></div>
+
+            <!-- Columna derecha: notas informativas del cálculo -->
+            <div class="col-izquierda">
+                <h2>Notas del cálculo</h2>
+
+                <p v-if="!resultado" class="vacio">
+                    Aún no hay un cálculo realizado.
+                </p>
+
+                <template v-if="resultado">
+                    <div class="info-calculada">
+                        Valor UF Base: <strong>${{ formato(resultado.uf_clp, 2) }}</strong>
+                    </div>
+                    <div v-for="info in resultado.informativos" :key="info.nombre" class="info-calculada">
+                        {{ info.nombre }}: <strong>{{ info.valor }} {{ info.unidad }}</strong>
+                    </div>
+                </template>
+            </div>
+        </div>
+    </main>
+
+    <main v-if="pestanaActiva === 'exportar'">
+        <div class="panel" style="flex: 1;">
+            <h2>Exportar</h2>
+            <div class="placeholder-export">
+                Próximamente: exportación a Excel y PDF del presupuesto de
+                "<strong>{{ resultado ? resultado.tipologia : '' }}</strong>".
+            </div>
+        </div>
+    </main>
+
+    <div class="barra-color"></div>
+</div>
+
+<script>
+const { createApp } = Vue;
+
+createApp({
+    data() {
+        return {
+            tipologias: [],
+            tipologiaId: "",
+            parametros: {},
+            porcentajes: { gastos_generales: 8, utilidades: 15, imprevistos: 1, iva: 19 },
+            vectoresPrecio: [],
+            vectorPrecio: "",
+            resultado: null,
+            ufActual: null,
+            ufIngresada: null,
+            calculando: false,
+            error: null,
+            pestanaActiva: "datos"
+        };
+    },
+    computed: {
+        tipologiaActual() {
+            return this.tipologias.find(t => t.id === this.tipologiaId) || null;
+        }
+    },
+    mounted() {
+        fetch("/api/tipologias")
+            .then(r => {
+                if (!r.ok) throw new Error("estado " + r.status);
+                return r.json();
+            })
+            .then(datos => { this.tipologias = datos; })
+            .catch(err => { this.error = "No se pudieron cargar las tipologías: " + err.message; });
+
+        fetch("/api/vectores-precio")
+            .then(r => {
+                if (!r.ok) throw new Error("estado " + r.status);
+                return r.json();
+            })
+            .then(datos => {
+                this.vectoresPrecio = datos;
+                if (datos.length) this.vectorPrecio = datos[0].id;
+            })
+            .catch(err => { this.error = "No se pudieron cargar los vectores de precio: " + err.message; });
+    },
+    methods: {
+        ayudaCampo(nombre) {
+            // Textos de ayuda - placeholder, pendiente de definir el
+            // contenido final (supuestos, criterios) por campo/tipología.
+            const textos = {
+                caudal: "Caudal de diseño que debe conducir la obra. Se usa para calcular la altura de escurrimiento mediante la ecuación de Manning.",
+                largo: "Longitud total del tramo a intervenir, medida en el sentido del flujo.",
+                base: "Ancho interior de la base o solera de la obra.",
+                altura: "Altura interior o de diseño de la sección considerada.",
+                talud: "Inclinación de los muros laterales. Use 0 para muros verticales; valores mayores indican taludes más tendidos.",
+                ancho: "Ancho de la sección considerada, medido perpendicular al flujo.",
+                alto: "Altura de escurrimiento o de la sección considerada.",
+            };
+            return textos[nombre]
+                || "Ingrese el valor correspondiente a este parámetro según el diseño de la obra. (Texto explicativo pendiente de definir.)";
+        },
+        ayudaPresupuesto(clave) {
+            // Textos de ayuda para el panel de Presupuesto - placeholder.
+            const textos = {
+                vector_precio: "Fuente de precios unitarios a usar en el cálculo. Por ahora solo existe 'Precios base'; a futuro podrás elegir entre distintos vectores (ej. por zona geográfica).",
+                gastos_generales: "Porcentaje aplicado sobre el costo directo para cubrir los gastos generales de administración de la obra.",
+                utilidades: "Porcentaje de utilidad del contratista, aplicado sobre el costo directo.",
+                imprevistos: "Porcentaje reservado para imprevistos de obra, aplicado sobre el costo directo.",
+                iva: "Impuesto al valor agregado, aplicado sobre el costo neto (costo directo + gastos generales + utilidades + imprevistos).",
+                valor_uf: "Valor de la Unidad de Fomento en pesos, usado para expresar el presupuesto en UF. Cambia este valor y presiona 'Recalcular presupuesto' para actualizar la conversión.",
+            };
+            return textos[clave] || "Texto explicativo pendiente de definir.";
+        },
+        alCambiarTipologia() {
+            // Precarga los valores por defecto de la tipología elegida
+            this.parametros = {};
+            this.resultado = null;
+            this.error = null;
+            this.pestanaActiva = "datos";
+            if (this.tipologiaActual) {
+                for (const campo of this.tipologiaActual.campos) {
+                    this.parametros[campo.nombre] = campo.defecto;
+                }
+            }
+        },
+        valorizar() {
+            this.calculando = true;
+            this.error = null;
+            fetch("/api/valorizar", {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({
+                    tipologia: this.tipologiaId,
+                    parametros: this.parametros,
+                    porcentajes: this.porcentajes,
+                    vector_precio: this.vectorPrecio
+                })
+            })
+                .then(r => r.json().then(datos => ({ ok: r.ok, datos })))
+                .then(({ ok, datos }) => {
+                    if (!ok) throw new Error(datos.error || "error del servidor");
+                    this.resultado = datos;
+                    // La primera vez no hay UF ingresada por el usuario: se
+                    // parte del valor del servidor. De ahí en adelante se
+                    // respeta lo que el usuario haya escrito en "Valor UF".
+                    if (this.ufIngresada == null || this.ufIngresada <= 0) {
+                        this.ufIngresada = datos.uf_clp;
+                    }
+                    this.ufActual = this.ufIngresada;
+                    this.pestanaActiva = "presupuesto";
+                })
+                .catch(err => { this.error = "No se pudo valorizar: " + err.message; })
+                .finally(() => { this.calculando = false; });
+        },
+        recalcularPresupuesto() {
+            // Mismo cálculo, disparado desde el panel de Presupuesto:
+            // aplica a la vez los cambios de porcentajes, vector de precios
+            // y valor UF ingresado.
+            this.valorizar();
+        },
+        ufDe(montoClp) {
+            if (!this.ufActual) return 0;
+            return montoClp / this.ufActual;
+        },
+        formato(valor, decimales = 0) {
+            return new Intl.NumberFormat("es-CL", {
+                minimumFractionDigits: decimales,
+                maximumFractionDigits: decimales
+            }).format(valor);
+        }
+    }
+}).mount("#app");
+</script>
+
+</body>
+</html>
