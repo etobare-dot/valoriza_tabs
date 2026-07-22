@@ -68,15 +68,21 @@ def verificar_valorizacion():
 
 
 def determinar_puerto():
-    """Puerto opcional por argumento: python valoriza_app 8080."""
+    """Puerto: usa $PORT si existe (Render, Railway, etc.), si no el por defecto."""
+    import os
     from servidor import PUERTO_POR_DEFECTO
+    puerto_env = os.environ.get("PORT")
+    if puerto_env:
+        try:
+            return int(puerto_env)
+        except ValueError:
+            print(f"[ERROR] PORT inválido '{puerto_env}'. Se usará {PUERTO_POR_DEFECTO}.")
     if len(sys.argv) > 1:
         try:
             return int(sys.argv[1])
         except ValueError:
-            print(f"[ERROR] Puerto invalido '{sys.argv[1]}'. Se usara {PUERTO_POR_DEFECTO}.")
+            print(f"[ERROR] Puerto inválido '{sys.argv[1]}'. Se usará {PUERTO_POR_DEFECTO}.")
     return PUERTO_POR_DEFECTO
-
 
 def main():
     print(SEPARADOR)
